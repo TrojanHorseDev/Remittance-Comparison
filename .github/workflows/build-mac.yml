@@ -1,0 +1,47 @@
+name: Build Mac Application
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: Apple-Silicon
+          - runner: macos-15-intel
+            architecture: Intel
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Build Mac application
+        run: |
+          python -m PyInstaller \
+            --clean \
+            --noconfirm \
+            --windowed \
+            --name RemittanceComparison \
+            app.py
+
+      - name: Upload application
+        uses: actions/upload-artifact@v4
+        with:
+          name: RemittanceComparison-${{ matrix.architecture }}
+          path: dist/RemittanceComparison.app
+          if-no-files-found: error
